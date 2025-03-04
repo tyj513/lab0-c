@@ -4,10 +4,20 @@
 
 #include "queue.h"
 
+struct queue_info {
+    struct list_head head;
+    int size;
+};
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
-    return NULL;
+    struct queue_info *q = malloc(sizeof(struct queue_info));
+    if (!q)
+        return NULL;
+    INIT_LIST_HEAD(&q->head);
+    q->size = 0;
+    return &q->head;
 }
 
 /* Free all storage used by queue */
