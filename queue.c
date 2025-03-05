@@ -238,7 +238,78 @@ void q_reverseK(struct list_head *head, int k)
 
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+struct list_head *merge(struct list_head *left,
+                        struct list_head *right,
+                        bool descend)
+{
+    struct list_head dummy;
+    INIT_LIST_HEAD(&dummy);
+    struct list_head *tail = &dummy;
+
+    while (left && right) {
+        const element_t *l = list_entry(left, element_t, list);
+        const element_t *r = list_entry(right, element_t, list);
+        if ((strcmp(l->value, r->value) <= 0) ^ descend) {
+            tail->next = left;
+            left->prev = tail;
+            left = left->next;
+        } else {
+            tail->next = right;
+            right->prev = tail;
+            right = right->next;
+        }
+        tail = tail->next;
+    }
+
+    tail->next = left ? left : right;
+    if (tail->next)
+        tail->next->prev = tail;
+
+    return dummy.next;
+}
+
+struct list_head *merge_sort(struct list_head *head, bool descend)
+{
+    if (!head || !head->next)
+        return head;
+
+    struct list_head *slow = head, *fast = head->next;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    struct list_head *mid = slow->next;
+    slow->next = NULL;
+
+    struct list_head *left = merge_sort(head, descend);
+    struct list_head *right = merge_sort(mid, descend);
+
+    return merge(left, right, descend);
+}
+
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    struct list_head *first = head->next;
+    struct list_head *last = head->prev;
+
+    last->next = NULL;
+    first->prev = NULL;
+
+    struct list_head *sorted = merge_sort(first, descend);
+
+    head->next = sorted;
+    sorted->prev = head;
+
+    struct list_head *tail = sorted;
+    while (tail->next)
+        tail = tail->next;
+    tail->next = head;
+    head->prev = tail;
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
